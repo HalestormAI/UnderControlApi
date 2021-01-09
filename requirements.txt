@@ -1,0 +1,6 @@
+fastapi~=0.63.0
+python-kasa
+uvicorn~=0.13.3
+asyncclick~=7.1.2.3
+click~=7.1.2
+toml~=0.10.2
