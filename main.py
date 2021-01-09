@@ -1,6 +1,6 @@
-import uvicorn
-from typing import Optional, Dict
+from typing import Dict
 
+import uvicorn
 from fastapi import FastAPI
 
 import under_control
