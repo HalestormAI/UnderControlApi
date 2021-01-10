@@ -1,7 +1,7 @@
 import re
 import subprocess
 from enum import auto
-from typing import Dict, List, Tuple, Union, Optional, Type
+from typing import Dict, List, Tuple, Union, Optional
 
 from fastapi import FastAPI, Response, status
 from pydantic import BaseModel
@@ -104,8 +104,6 @@ class LGTVCommander:
         """
         is_input: bool = isinstance(command, InputCommand)
 
-        HandlerCls: Type
-        handler: GenericCommand
         if is_input:
             HandlerCls = InputControl
             handler = self._inp
