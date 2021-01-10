@@ -25,9 +25,15 @@ class LGTVException(Exception):
     pass
 
 
+# Since the different commands use different controllers, we'll split them into several enums, which can then
+# be used to direct the command. An important note is that this means we can only support any given command
+# name on a single controller (e.g. cannot have Media.Up and Input.Up).
+#
+# This isn't currently a problem...
+
 class MediaCommand(AutoName):
     """
-    Support a subset of commands (only planning a basic UI)
+    The auto() value will be the lower-case of the enum item's name (see utils.AutoName)
     """
     VOLUME_UP: str = auto()
     VOLUME_DOWN: str = auto()
@@ -54,9 +60,6 @@ class SystemCommand(AutoName):
 
 
 class InputCommand(AutoName):
-    """
-    Input commands are handled differently in the API, so we'll keep them in a separate enum
-    """
     UP: str = auto()
     DOWN: str = auto()
     LEFT: str = auto()
@@ -71,10 +74,13 @@ class InputCommand(AutoName):
     INFO: str = auto()
 
 
-AllCommands = Union[InputCommand, MediaCommand, AppCommand, SystemCommand]
+GenericCommand = Union[InputCommand, MediaCommand, AppCommand, SystemCommand]
 
 
 class LGTVCommander:
+    """
+    Wrapper for the WebOsClient to handle command funnelling.
+    """
 
     def __init__(self, client):
         self.client: WebOSClient = client
@@ -84,9 +90,22 @@ class LGTVCommander:
         self._app: ApplicationControl = ApplicationControl(client)
         self._inp: InputControl = InputControl(client)
 
-    def send_command(self, command: AllCommands, message=None):
-        is_input = isinstance(command, InputCommand)
+    def send_command(self, command: GenericCommand, message: str = None) -> Union[str, Dict]:
+        """
+        For a given command object, this will choose the Control class and instance, then send the command
+        using it.
 
+        For certain commands with messages, it will perform some setup on the message to make it compatible
+        with the host.
+
+        :param command: The enum for the chosen command
+        :param message: An optional message.
+        :return: The response from the host.
+        """
+        is_input: bool = isinstance(command, InputCommand)
+
+        HandlerCls: Type
+        handler: GenericCommand
         if is_input:
             HandlerCls = InputControl
             handler = self._inp
@@ -112,6 +131,7 @@ class LGTVCommander:
             if command == MediaCommand.SET_VOLUME:
                 message = int(message)
             elif command == AppCommand.LAUNCH:
+                # The host expects an application object - we'll query the host for it here
                 apps = self._app.list_apps()
                 message = [x for x in apps if message in x["title"].lower()][0]
             elif command == MediaCommand.MUTE:
@@ -126,7 +146,7 @@ class LGTVCommander:
 
 
 class CommandRequestModel(BaseModel):
-    name: AllCommands
+    name: GenericCommand
     message: Optional[str] = None
 
 
