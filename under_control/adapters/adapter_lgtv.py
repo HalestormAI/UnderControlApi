@@ -1,7 +1,7 @@
 import re
 import subprocess
 from enum import auto
-from typing import Dict, List, Tuple, Union, Optional
+from typing import Dict, List, Tuple, Union, Optional, Type
 
 from fastapi import FastAPI, Response, status
 from pydantic import BaseModel
@@ -13,6 +13,7 @@ from pywebostv.controls import (
     InputControl
 )
 
+import under_control.config as config
 import under_control.logger as log
 from under_control import adapters
 from under_control.utils import AutoName
@@ -185,6 +186,10 @@ class LGTVAdapter(adapters.Adapter):
 
         except TimeoutError:
             raise LGTVException(f"Timed out connecting to LGTV {name}.")
+        except Exception as e:
+            if str(e) == "Failed to register.":
+                raise LGTVException(f"Failed to pair LGTV {name}.")
+            raise e
 
     def _disconnect_all(self):
         """
@@ -283,9 +288,14 @@ class LGTVAdapter(adapters.Adapter):
 
             try:
                 data = self.devices[name]
-                client = self._device_connect(name, data['host'], data.get('key', None))
+                commander = self._device_connect(name, data['host'], data.get('key', None))
 
-                self._connections[name] = client
+                key = commander.client.key
+                dev_cfg = config.get(f"adapters.LGTVAdapter.devices.{name}")
+                dev_cfg['key'] = key.decode()
+                config.save()
+
+                self._connections[name] = commander
                 log.logger.info(f"Connected to LGTV {name}.")
                 return {"message": "Connected"}
             except LGTVException as e:
