@@ -1,4 +1,5 @@
-from typing import AnyStr, Generic, Optional
+from typing import AnyStr, Optional, Any
+
 import toml
 
 _config = {}
@@ -9,7 +10,7 @@ class ConfigException(Exception):
         super().__init__(message)
 
 
-def get(item_path: AnyStr) -> Generic:
+def get(item_path: AnyStr) -> Any:
     """
     We use the concept of 'paths' in config to refer to the nested indices of the config items.
 
