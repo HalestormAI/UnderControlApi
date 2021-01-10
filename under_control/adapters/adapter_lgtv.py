@@ -280,8 +280,11 @@ class LGTVAdapter(adapters.Adapter):
         for n, d in self.devices.items():
             if self._ping_device_unix(n, d['host']):
                 self._online.append(n)
-            elif n in self._online:
-                self._online.remove(n)
+            else:
+                if n in self._online:
+                    self._online.remove(n)
+                if n in self._connections:
+                    del self._connections[n]
 
     def _register_endpoints(self, app: FastAPI):
         @app.get("/lgtv")
