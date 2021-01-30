@@ -25,6 +25,10 @@ def get(item_path: AnyStr) -> Any:
     :param item_path: The dot-separated path to the config item
     :return: The value at the path (could
     """
+
+    if _config == {}:
+        raise ConfigException("Config is empty - has the app setup run?")
+
     pieces = item_path.split('.')
     ptr = _config
     for p in pieces:
