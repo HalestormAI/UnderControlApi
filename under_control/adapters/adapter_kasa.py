@@ -4,8 +4,8 @@ from typing import Dict
 from fastapi import FastAPI, Response, status
 from kasa import Discover
 
-from under_control import adapters
 import under_control.logger as log
+from under_control import adapters
 
 
 class KasaAdapter(adapters.Adapter):
@@ -66,7 +66,7 @@ class KasaAdapter(adapters.Adapter):
             return self.get_devices()
 
         @app.get("/kasa/{alias}")
-        def kasa_devices(alias: str) -> Dict:
+        def kasa_single_device(alias: str) -> Dict:
             devices = self.get_devices()
             if not alias in devices:
                 return {}
