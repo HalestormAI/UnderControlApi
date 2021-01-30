@@ -1,7 +1,7 @@
 import asyncio
 from typing import Dict
 
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Response, status, Path
 from kasa import Discover
 
 import under_control.logger as log
@@ -75,7 +75,7 @@ class KasaAdapter(adapters.Adapter):
             asyncio.run(dev.update())
             return dev
 
-        @app.get("/kasa/{alias}/on")
+        @app.put("/kasa/{alias}/on")
         def device_on(alias: str, response: Response) -> Dict:
             dev = self._get_device(alias)
             if dev is None:
@@ -85,7 +85,7 @@ class KasaAdapter(adapters.Adapter):
             asyncio.run(dev.update())
             return {"message": f"Turned on [{alias}]"}
 
-        @app.get("/kasa/{alias}/off")
+        @app.put("/kasa/{alias}/off")
         def device_off(alias: str, response: Response) -> Dict:
             dev = self._get_device(alias)
             if dev is None:
@@ -95,8 +95,14 @@ class KasaAdapter(adapters.Adapter):
             asyncio.run(dev.update())
             return {"message": f"Turned off [{alias}]"}
 
-        @app.get("/kasa/{alias}/colour/{colour_spec}")
-        def device_off(alias: str, colour_spec: str, response: Response) -> Dict:
+        @app.put("/kasa/{alias}/colour/{colour_spec}")
+        def set_bulb_colour(response: Response,
+                            alias: str = Path(..., title="Device Alias"),
+                            colour_spec: str = Path(...,
+                                                    title="Comma-separated HSV tuple",
+                                                    description="Hue: 0...360, S: 0...100, V: 0...100.",
+                                                    regex=r'^\d{1,3},\d{1,3},\d{1,3}$'),
+                            ) -> Dict:
             dev = self._get_device(alias)
             if dev is None:
                 response.status_code = status.HTTP_400_BAD_REQUEST
@@ -111,8 +117,14 @@ class KasaAdapter(adapters.Adapter):
             asyncio.run(dev.update())
             return {"message": f"Set the colour of [{alias}] to {colour_spec}"}
 
-        @app.get("/kasa/{alias}/brightness/{brightness}")
-        def device_off(alias: str, brightness: int, response: Response) -> Dict:
+        @app.put("/kasa/{alias}/brightness/{brightness}")
+        def set_bulb_brightness(response: Response,
+                                alias: str = Path(..., title="Device Alias"),
+                                brightness: int = Path(...,
+                                                       title="Colour brightness",
+                                                       description="An integer between 0 and 100",
+                                                       ge=0, le=100),
+                                ) -> Dict:
             dev = self._get_device(alias)
             if dev is None:
                 response.status_code = status.HTTP_400_BAD_REQUEST
