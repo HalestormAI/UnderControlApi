@@ -117,6 +117,27 @@ class KasaAdapter(adapters.Adapter):
             asyncio.run(dev.update())
             return {"message": f"Set the colour of [{alias}] to {colour_spec}"}
 
+        @app.put("/kasa/{alias}/colour_temp/{colour_temp}")
+        def set_bulb_colour_temp(response: Response,
+                                 alias: str = Path(..., title="Device Alias"),
+                                 colour_temp: int = Path(...,
+                                                         title="Colour temperature in Kelvin",
+                                                         description="An integer between 2500 and 9000",
+                                                         ge=2500, le=9000),
+                                 ) -> Dict:
+            dev = self._get_device(alias)
+            if dev is None:
+                response.status_code = status.HTTP_400_BAD_REQUEST
+                return {"message": f"Could not find device [{alias}]"}
+
+            if not dev.is_variable_color_temp:
+                response.status_code = status.HTTP_400_BAD_REQUEST
+                return {"message": f"Cannot set the colour temperature of [{alias}]"}
+
+            asyncio.run(dev.set_color_temp(colour_temp))
+            asyncio.run(dev.update())
+            return {"message": f"Set the colour temperature of [{alias}] to {colour_temp}K"}
+
         @app.put("/kasa/{alias}/brightness/{brightness}")
         def set_bulb_brightness(response: Response,
                                 alias: str = Path(..., title="Device Alias"),
